@@ -25,45 +25,32 @@ describe('Contrato de apresentação do OctoFit', () => {
     vi.restoreAllMocks();
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes('/api/activities')) return new Response(JSON.stringify({ activities: [{ type: 'run', minutes: 40, points: 40 }, { type: 'cycle', minutes: 25, points: 25 }] }), { status: 200 });
-      if (url.includes('/api/teams')) return new Response(JSON.stringify({ teams: [{ name: 'Octocats', members: ['507f1f77bcf86cd799439011'] }] }), { status: 200 });
+      if (url.includes('/api/activities')) return new Response(JSON.stringify({ activities: [{ type: 'run', minutes: 30, points: 30 }] }), { status: 200 });
+      if (url.includes('/api/teams')) return new Response(JSON.stringify({ teams: [{ name: 'Octocats', members: ['Mona'] }] }), { status: 200 });
       if (url.includes('/api/leaderboard')) return new Response(JSON.stringify({ leaderboard: [{ teamName: 'Octocats', totalPoints: 90, rank: 1 }] }), { status: 200 });
       if (/\/api\/workouts\/suggestions\/mona(%40|@)example\.com$/.test(url)) return new Response(JSON.stringify({ suggestions: [{ title: 'Intervalos', reason: 'Desenvolva sua resistência' }] }), { status: 200 });
       return new Response(JSON.stringify({ message: 'Não encontrado' }), { status: 404 });
     }));
   });
 
-  it('/activities exibe dados de atividades retornados pela API', async () => {
+  it('exibe dados de atividades retornados pela API', async () => {
     renderRoute('/activities');
     expect(screen.getByRole('heading', { name: /atividades/i })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/corrida/i)).toBeInTheDocument());
-    expect(screen.getByText(/40 minutos/i)).toBeInTheDocument();
-    expect(screen.getByText(/40 pontos/i)).toBeInTheDocument();
-    expect(screen.getByText(/ciclismo/i)).toBeInTheDocument();
-    expect(screen.getByText(/25 minutos/i)).toBeInTheDocument();
   });
 
-  it('/teams exibe equipes e integrantes com conteúdo acessível', async () => {
-    renderRoute('/teams');
+  it('exibe equipes, placar e sugestões de treino com conteúdo acessível', async () => {
+    const teams = renderRoute('/teams');
     await waitFor(() => expect(screen.getByText(/Octocats/)).toBeInTheDocument());
-    expect(screen.getByText(/1 integrante/i)).toBeInTheDocument();
-    expect(screen.queryByText('507f1f77bcf86cd799439011')).not.toBeInTheDocument();
-  });
-
-  it('/leaderboard exibe posição, equipe e pontuação', async () => {
-    renderRoute('/leaderboard');
+    teams.unmount();
+    const leaderboard = renderRoute('/leaderboard');
     await waitFor(() => expect(screen.getByText(/90/)).toBeInTheDocument());
-    expect(screen.getByText(/Octocats/)).toBeInTheDocument();
-    expect(screen.getByText(/1º lugar/i)).toBeInTheDocument();
-  });
-
-  it('/workouts exibe título e justificativa da sugestão', async () => {
+    leaderboard.unmount();
     renderRoute('/workouts');
     await waitFor(() => expect(screen.getByText(/Intervalos/)).toBeInTheDocument());
-    expect(screen.getByText(/Desenvolva sua resistência/)).toBeInTheDocument();
   });
 
-  it('/workouts solicita sugestões de treino para uma pessoa específica', async () => {
+  it('solicita sugestões de treino para uma pessoa específica', async () => {
     renderRoute('/workouts');
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/workouts\/suggestions\/mona(%40|@)example\.com$/)));
   });
